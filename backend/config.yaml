@@ -1,0 +1,40 @@
+# ============================================================
+#  Конфигурация сервера БурмалдаGPT
+#  Здесь прописываются IP/модель LLM и все настройки системы.
+#  Секреты (SECRET_KEY) — в .env (см. .env.example)
+# ============================================================
+
+llm:
+  # LLM-сервер (OpenAI-compatible /v1/chat/completions).
+  # Пропишите здесь адрес и название вашей модели.
+  base_url: "http://YOUR_LLM_SERVER_IP:PORT"
+  model: "YOUR_MODEL_NAME"
+  api_key: ""                # если сервер требует ключ — впиши сюда или в .env (LLM_API_KEY)
+  max_concurrent: 6          # лимит параллельных запросов к модели (см. возможности сервера)
+  timeout_seconds: 120       # таймаут одного запроса к LLM
+  context_messages: 20       # сколько последних сообщений передавать как контекст
+  temperature: 0.7
+  max_tokens: 2048
+
+  # Включить поддержку изображений (мультимодал). false — если модель НЕ понимает картинки.
+  vision_enabled: true
+  max_images_per_message: 5
+
+translator:
+  base_url: "http://localhost:8000"   # существующий burmalda_api
+  hard_mode: true
+  timeout_seconds: 30
+
+auth:
+  secret_key_env: "SECRET_KEY"        # имя переменной окружения с секретом JWT
+  token_ttl_minutes: 10080            # 7 дней
+
+database:
+  url: "sqlite:///./burmalda.db"
+
+server:
+  host: "0.0.0.0"
+  port: 8001
+  cors_origins:
+    - "http://localhost:5173"
+    - "http://127.0.0.1:5173"

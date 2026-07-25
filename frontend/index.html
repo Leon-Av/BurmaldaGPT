@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="БурмалдаGPT — нейросетевой чат, отвечающий на «бурмалде»." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <title>БурмалдаGPT</title>
+    <script>
+      // Применяем тему до отрисовки, чтобы избежать «вспышки» неправильной темы.
+      (function () {
+        try {
+          var t = localStorage.getItem("burmalda-theme") || "system";
+          var sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var dark = t === "dark" || (t === "system" && sysDark);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

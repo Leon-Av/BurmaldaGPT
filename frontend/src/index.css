@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Базовые токены тем ---------- */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f7f8fa;
+  --bg-elevated: #ffffff;
+  --border: #e7e9ee;
+  --border-strong: #d4d7de;
+  --text: #1a1d24;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 12px 40px rgba(16, 24, 40, 0.08), 0 4px 12px rgba(16, 24, 40, 0.04);
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0f1115;
+  --bg-soft: #161922;
+  --bg-elevated: #1c2030;
+  --border: #262a36;
+  --border-strong: #343a4a;
+  --text: #e8eaed;
+  --text-muted: #9aa0ac;
+  --text-faint: #6b7280;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: theme("fontFamily.sans");
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  /* Тонкий стильный скроллбар */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-faint);
+    background-clip: content-box;
+  }
+}
+
+/* ---------- Утилиты темы ---------- */
+@layer utilities {
+  .bg-app {
+    background-color: var(--bg);
+  }
+  .bg-soft {
+    background-color: var(--bg-soft);
+  }
+  .bg-elevated {
+    background-color: var(--bg-elevated);
+  }
+  .text-main {
+    color: var(--text);
+  }
+  .text-muted {
+    color: var(--text-muted);
+  }
+  .text-faint {
+    color: var(--text-faint);
+  }
+  .border-app {
+    border-color: var(--border);
+  }
+  .border-strong {
+    border-color: var(--border-strong);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow);
+  }
+  .shadow-float {
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+/* ---------- Markdown-контент ---------- */
+.markdown {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  word-wrap: break-word;
+}
+.markdown > *:first-child {
+  margin-top: 0;
+}
+.markdown > *:last-child {
+  margin-bottom: 0;
+}
+.markdown p {
+  margin: 0.6em 0;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.2em 0 0.5em;
+}
+.markdown h1 {
+  font-size: 1.4em;
+}
+.markdown h2 {
+  font-size: 1.25em;
+}
+.markdown h3 {
+  font-size: 1.1em;
+}
+.markdown ul,
+.markdown ol {
+  margin: 0.6em 0;
+  padding-left: 1.5em;
+}
+.markdown li {
+  margin: 0.25em 0;
+}
+.markdown a {
+  color: theme("colors.brand.600");
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dark .markdown a {
+  color: theme("colors.brand.300");
+}
+.markdown code {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875em;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+}
+.markdown pre {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1em 1.1em;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.markdown pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.55;
+}
+.markdown blockquote {
+  border-left: 3px solid theme("colors.brand.400");
+  padding-left: 1em;
+  margin: 0.8em 0;
+  color: var(--text-muted);
+}
+.markdown table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  width: 100%;
+  font-size: 0.9em;
+}
+.markdown th,
+.markdown td {
+  border: 1px solid var(--border);
+  padding: 0.5em 0.7em;
+  text-align: left;
+}
+.markdown th {
+  background: var(--bg-soft);
+  font-weight: 600;
+}
+.markdown hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.2em 0;
+}
+
+/* Плавный caret при стриминге */
+.stream-caret::after {
+  content: "▍";
+  margin-left: 1px;
+  color: theme("colors.brand.500");
+  animation: blink 1s step-end infinite;
+}

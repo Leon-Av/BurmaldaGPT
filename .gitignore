@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# БД
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Логи
+*.log
+
+# Архивы проекта (генерируются локально, на GitHub не нужны)
+*.zip
+*.7z
+*.tar.gz
+
+# Служебные скрипты тестов/скриншотов
+shots/
+frontend/make-screenshots.mjs
+
+# Старый логотип с текстом (на GitHub идёт только обрезанный logo.png)
+БурмалдаGPT.png
+
+# Временные бэкапы
+*.bak
