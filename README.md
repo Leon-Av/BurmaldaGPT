@@ -139,7 +139,10 @@ pip install -r requirements.txt
 cp .env.example .env
 python -c "import secrets; print(secrets.token_hex(32))"
 
-# Проверьте/отредактируйте config.yaml (адрес и модель LLM)
+# Создайте config.yaml из примера и впишите адрес/модель вашей LLM
+cp config.example.yaml config.yaml
+#   затем отредактируйте backend/config.yaml: llm.base_url и llm.model
+
 python -m app.main
 ```
 

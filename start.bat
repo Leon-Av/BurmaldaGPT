@@ -46,6 +46,15 @@ if not exist "%~dp0backend\.env" (
   )
 )
 
+REM --- Create backend\config.yaml from example if it does not exist yet ---
+if not exist "%~dp0backend\config.yaml" (
+  if exist "%~dp0backend\config.example.yaml" (
+    copy "%~dp0backend\config.example.yaml" "%~dp0backend\config.yaml" >nul
+    echo [*] Created backend\config.yaml from config.example.yaml
+    echo [*] NOTE: edit backend\config.yaml and set llm.base_url + llm.model
+  )
+)
+
 echo.
 echo  Starting services in separate windows...
 echo.
