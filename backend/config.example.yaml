@@ -1,24 +1,77 @@
 # ============================================================
 #  Конфигурация сервера БурмалдаGPT
-#  Здесь прописываются IP/модель LLM и все настройки системы.
-#  Секреты (SECRET_KEY) — в .env (см. .env.example)
+#  Все настройки системы. Секреты (SECRET_KEY) — в .env
 # ============================================================
 
+# --- Источники LLM: от 1 до 6 локальных серверов + опционально cloud ---
 llm:
-  # LLM-сервер (OpenAI-compatible /v1/chat/completions).
-  # Пропишите здесь адрес и название вашей модели.
-  base_url: "http://YOUR_LLM_SERVER_IP:PORT"
-  model: "YOUR_MODEL_NAME"
-  api_key: ""                # если сервер требует ключ — впиши сюда или в .env (LLM_API_KEY)
-  max_concurrent: 6          # лимит параллельных запросов к модели (см. возможности сервера)
-  timeout_seconds: 120       # таймаут одного запроса к LLM
-  context_messages: 20       # сколько последних сообщений передавать как контекст
-  temperature: 0.7
-  max_tokens: 2048
+  # Режим выбора модели для пользователей.
+  # false (по умолчанию) — авто-балансировка, пользователь не выбирает.
+  # true  — в UI появляется селектор моделей (как в ChatGPT),
+  #         пользователь видит все активные локальные + облачные модели.
+  allow_user_model_selection: false
 
-  # Включить поддержку изображений (мультимодал). false — если модель НЕ понимает картинки.
-  vision_enabled: true
+  # Стратегия балансировки между локальными серверами (когда выбор выключен):
+  #   round_robin  — по очереди (простой, Stateless)
+  #   least_load   — наименее загруженный (по /metrics, нужен --metrics в LM Studio)
+  load_balancing: round_robin
+
+  # --- Локальные сервера LM Studio (1-6 штук) ---
+  # Каждый сервер: name (для UI), base_url, api_key (обычно пустой для LM Studio),
+  # weight (вес в round_robin, мощный сервер = больший вес).
+  # Минимум 1, можно закомментировать лишние.
+  local_servers:
+    - name: "Сервер 1 (9950x)"
+      base_url: "http://YOUR_LLM_SERVER_IP:PORT"
+      api_key: ""
+      weight: 1
+    # - name: "Сервер 2 (5600x)"
+    #   base_url: "http://192.168.1.50:11235"
+    #   api_key: ""
+    #   weight: 1
+
+  # --- Облачные провайдеры (необязательно) ---
+  # Активируются флагом enabled. Нужен API-ключ в .env (см. имена в provider.env_key).
+  # Когда включён выбор моделей — пользователь видит эти как отдельные модели.
+  cloud_providers:
+    - name: "OpenAI"
+      enabled: false
+      base_url: "https://api.openai.com/v1"
+      model: "gpt-4o-mini"
+      env_key: "OPENAI_API_KEY"      # реальный ключ — в .env: OPENAI_API_KEY=sk-...
+    - name: "Anthropic"
+      enabled: false
+      base_url: "https://api.anthropic.com/v1"
+      model: "claude-3-5-haiku-20241022"
+      env_key: "ANTHROPIC_API_KEY"
+    - name: "Groq"
+      enabled: false
+      base_url: "https://api.groq.com/openai/v1"
+      model: "llama-3.1-8b-instant"
+      env_key: "GROQ_API_KEY"
+
+  # --- Общие параметры генерации ---
+  context_max_tokens: 4096    # лимит контекста (вход) — sliding window на бэкенде
+  max_output_tokens: 1024     # лимит ответа (выход)
+  temperature: 0.7
+  timeout_seconds: 120
+  # Сколько сообщений истории подавать максимум (доп. ограничение к токенам).
+  context_messages: 20
+
+  # --- Параллельность ---
+  max_concurrent: 64          # общий лимит одновременных запросов к ЛЮБОМУ LLM
+  vision_enabled: true        # false — если модель не понимает картинки
   max_images_per_message: 5
+
+# --- Очередь и rate limiting ---
+queue:
+  # Гибридная очередь: первые N запросов ждут с показом позиции,
+  # остальные получают мгновенный 429.
+  max_waiting: 30             # сколько запросов могут ждать в очереди
+  wait_timeout_seconds: 60    # максимум ожидания в очереди, потом отмена
+  # Per-user rate limiting (token bucket)
+  user_rate_limit_per_minute: 12   # запросов в минуту на пользователя
+  user_rate_limit_per_hour: 200    # запросов в час
 
 translator:
   base_url: "http://localhost:8000"   # существующий burmalda_api
@@ -26,10 +79,11 @@ translator:
   timeout_seconds: 30
 
 auth:
-  secret_key_env: "SECRET_KEY"        # имя переменной окружения с секретом JWT
+  secret_key_env: "SECRET_KEY"        # секрет из .env
   token_ttl_minutes: 10080            # 7 дней
 
 database:
+  # SQLite для разработки. Для продакшена: postgresql://user:pass@host/db
   url: "sqlite:///./burmalda.db"
 
 server:

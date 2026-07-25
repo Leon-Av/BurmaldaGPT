@@ -11,3 +11,4 @@ python-jose[cryptography]>=3.3
 httpx>=0.28
 sse-starlette>=2.2
 python-dotenv>=1.0
+tiktoken>=0.7
