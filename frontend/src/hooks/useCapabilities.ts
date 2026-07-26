@@ -8,6 +8,8 @@ const DEFAULT: Capabilities = {
   vision_enabled: true,
   max_images_per_message: 5,
   model: "",
+  allow_model_selection: false,
+  models: [],
 };
 
 export function useCapabilities(enabled: boolean): Capabilities {

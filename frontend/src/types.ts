@@ -30,15 +30,25 @@ export interface Message {
   images?: MessageImage[];
 }
 
+/** Одна доступная модель (источник LLM) для UI-селектора. */
+export interface ModelOption {
+  name: string; // имя источника ("Сервер 1 (9950x)" / "OpenAI" / ...)
+  kind: "local" | "cloud";
+  model: string; // имя модели ("granite-4.0-h-tiny" / "gpt-4o-mini" / ...)
+}
+
 export interface Capabilities {
   vision_enabled: boolean;
   max_images_per_message: number;
-  model: string;
+  model: string; // имя модели по умолчанию (для отображения)
+  allow_model_selection: boolean;
+  models: ModelOption[];
 }
 
 /** SSE-события стрима ответа ассистента. */
 export type StreamEvent =
   | { type: "token"; delta: string }
+  | { type: "source"; source: string; kind: "local" | "cloud" } // какой источник выбран роутером
   | { type: "title"; title: string }
   | { type: "message"; id: string }
   | { type: "error"; status?: number; message: string }

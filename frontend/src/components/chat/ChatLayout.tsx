@@ -6,18 +6,21 @@
 показывается центрированный welcome-оверлей; когда есть — обычный список.
 */
 import { motion } from "framer-motion";
-import { Menu, Sun, Moon, Monitor, Square } from "lucide-react";
+import { Menu, Sun, Moon, Monitor, Square, Cpu } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useChatsStore } from "@/store/chats";
 import { useThemeStore } from "@/store/theme";
 
 import type { Theme } from "@/types";
+import { useCapabilities } from "@/hooks/useCapabilities";
 import { Logo } from "@/components/ui/Logo";
 import { Message } from "./Message";
 import { MessageInput } from "./MessageInput";
 import { SettingsModal } from "@/components/settings/SettingsModal";
 import { Sidebar } from "./Sidebar";
+import { ModelSelector } from "./ModelSelector";
+import { ErrorBanner } from "./ErrorBanner";
 
 const SUGGESTIONS = [
   { icon: "💡", title: "Объясни простыми словами", prompt: "Объясни, что такое квантовая запутанность, простыми словами" },
@@ -33,11 +36,13 @@ export function ChatLayout() {
     messagesByChat,
     streaming,
     streamingChatId,
+    currentSource,
     loadChats,
     sendMessage,
     stopStreaming,
   } = useChatsStore();
   const { theme, setTheme } = useThemeStore();
+  const caps = useCapabilities(true);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -108,8 +113,8 @@ export function ChatLayout() {
       {/* Правая часть: шапка + область сообщений + поле ввода.
           Стабильная структура — не пересоздаётся при первом ответе. */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 px-3 md:px-5 flex items-center justify-between shrink-0 border-b border-app">
-          <div className="flex items-center gap-2 min-w-0">
+        <header className="h-16 px-3 md:px-5 flex items-center justify-between shrink-0 border-b border-app gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <button
               onClick={() => setSidebarOpen(true)}
               className="md:hidden h-10 w-10 rounded-xl text-muted hover:text-main hover:bg-soft flex items-center justify-center shrink-0"
@@ -119,19 +124,31 @@ export function ChatLayout() {
             </button>
             <h2 className="font-semibold text-main truncate">{activeChatTitle}</h2>
             {streaming && streamingChatId === activeChatId && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-faint ml-2">
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-faint ml-2 shrink-0">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-500 animate-pulse-soft" />
-                печатает
+                {currentSource ? (
+                  <span className="inline-flex items-center gap-1 truncate max-w-[140px]">
+                    <Cpu size={11} className="shrink-0" />
+                    <span className="truncate">{currentSource}</span>
+                  </span>
+                ) : (
+                  "печатает"
+                )}
               </span>
             )}
           </div>
-          <button
-            onClick={cycleTheme}
-            className="h-10 w-10 rounded-xl text-muted hover:text-main hover:bg-soft flex items-center justify-center transition-colors shrink-0"
-            title={`Тема: ${theme}`}
-          >
-            {themeIcon[theme]}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {caps.allow_model_selection && caps.models.length > 0 && (
+              <ModelSelector models={caps.models} />
+            )}
+            <button
+              onClick={cycleTheme}
+              className="h-10 w-10 rounded-xl text-muted hover:text-main hover:bg-soft flex items-center justify-center transition-colors shrink-0"
+              title={`Тема: ${theme}`}
+            >
+              {themeIcon[theme]}
+            </button>
+          </div>
         </header>
 
         {/* Контейнер сообщений — единый overflow-y-auto, не пересоздаётся. */}
@@ -183,6 +200,7 @@ export function ChatLayout() {
       </div>
 
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ErrorBanner />
     </div>
   );
 }

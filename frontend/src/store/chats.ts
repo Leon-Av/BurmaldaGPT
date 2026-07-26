@@ -13,6 +13,12 @@ interface ChatsState {
   loadingMessages: boolean;
   streaming: boolean;
   streamingChatId: string | null;
+  /** Источник (сервер/модель), обрабатывающий текущий стрим — для индикатора в UI. */
+  currentSource: string | null;
+  /** Текст ошибки последнего запроса (для дружелюбного UI). Сбрасывается при новом запросе. */
+  lastError: string | null;
+  /** Выбранная пользователем модель (имя источника) или null = авто. */
+  selectedModel: string | null;
   currentStream: StreamHandle | null;
 
   loadChats: () => Promise<void>;
@@ -23,6 +29,8 @@ interface ChatsState {
   sendMessage: (content: string, images?: File[]) => Promise<void>;
   stopStreaming: () => void;
   ensureActiveChat: () => Promise<string>;
+  setSelectedModel: (name: string | null) => void;
+  dismissError: () => void;
 }
 
 export const useChatsStore = create<ChatsState>((set, get) => ({
@@ -33,6 +41,9 @@ export const useChatsStore = create<ChatsState>((set, get) => ({
   loadingMessages: false,
   streaming: false,
   streamingChatId: null,
+  currentSource: null,
+  lastError: null,
+  selectedModel: null,
   currentStream: null,
 
   loadChats: async () => {
@@ -69,7 +80,6 @@ export const useChatsStore = create<ChatsState>((set, get) => ({
   },
 
   renameChat: async (chatId, title) => {
-    // Оптимистичное обновление.
     set((s) => ({
       chats: s.chats.map((c) => (c.id === chatId ? { ...c, title } : c)),
     }));
@@ -105,8 +115,12 @@ export const useChatsStore = create<ChatsState>((set, get) => ({
     return get().createChat();
   },
 
+  setSelectedModel: (name) => set({ selectedModel: name }),
+  dismissError: () => set({ lastError: null }),
+
   sendMessage: async (content, images = []) => {
     const chatId = await get().ensureActiveChat();
+    const { selectedModel } = get();
 
     // Добавляем сообщение пользователя сразу (оптимистично).
     const userMsg: Message = {
@@ -136,14 +150,18 @@ export const useChatsStore = create<ChatsState>((set, get) => ({
       },
       streaming: true,
       streamingChatId: chatId,
+      currentSource: null,
+      lastError: null,
     }));
 
-    const handle = streamMessage(chatId, content, images);
+    const handle = streamMessage(chatId, content, images, selectedModel ?? undefined);
     set({ currentStream: handle });
 
     try {
       for await (const ev of handle.events) {
-        if (ev.type === "token") {
+        if (ev.type === "source") {
+          set({ currentSource: ev.source });
+        } else if (ev.type === "token") {
           set((s) => {
             const list = s.messagesByChat[chatId] || [];
             return {
@@ -164,7 +182,6 @@ export const useChatsStore = create<ChatsState>((set, get) => ({
             ),
           }));
         } else if (ev.type === "message") {
-          // Заменяем placeholder на сохранённый id.
           set((s) => {
             const list = s.messagesByChat[chatId] || [];
             return {
@@ -177,48 +194,55 @@ export const useChatsStore = create<ChatsState>((set, get) => ({
             };
           });
         } else if (ev.type === "error") {
+          // Дружелюбное сообщение для 429 (перегрузка/rate limit).
+          const isOverload = ev.status === 429;
+          const friendly = isOverload
+            ? "Сервис сейчас перегружен. Пожалуйста, подождите минуту и попробуйте снова."
+            : ev.message;
+          set({ lastError: friendly });
+
+          // Если ответа ещё нет — убираем пустой placeholder, чтобы не было пустого сообщения.
           set((s) => {
             const list = s.messagesByChat[chatId] || [];
-            return {
-              messagesByChat: {
-                ...s.messagesByChat,
-                [chatId]: list.map((m) =>
-                  m.id === assistantPlaceholderId
-                    ? {
-                        ...m,
-                        content:
-                          m.content ||
-                          `_Ошибка: ${ev.message}_`,
-                      }
-                    : m
-                ),
-              },
-            };
+            const assistant = list.find((m) => m.id === assistantPlaceholderId);
+            if (assistant && !assistant.content) {
+              return {
+                messagesByChat: {
+                  ...s.messagesByChat,
+                  [chatId]: list.filter((m) => m.id !== assistantPlaceholderId),
+                },
+              };
+            }
+            return s;
           });
         } else if (ev.type === "done") {
           break;
         }
       }
     } catch (e) {
-      // Прерывание (abort) — это не ошибка.
       if ((e as Error).name !== "AbortError") {
+        set({ lastError: (e as Error).message });
         set((s) => {
           const list = s.messagesByChat[chatId] || [];
-          return {
-            messagesByChat: {
-              ...s.messagesByChat,
-              [chatId]: list.map((m) =>
-                m.id === assistantPlaceholderId
-                  ? { ...m, content: m.content || `_Ошибка: ${(e as Error).message}_` }
-                  : m
-              ),
-            },
-          };
+          const assistant = list.find((m) => m.id === assistantPlaceholderId);
+          if (assistant && !assistant.content) {
+            return {
+              messagesByChat: {
+                ...s.messagesByChat,
+                [chatId]: list.filter((m) => m.id !== assistantPlaceholderId),
+              },
+            };
+          }
+          return s;
         });
       }
     } finally {
-      set({ streaming: false, streamingChatId: null, currentStream: null });
-      // Обновляем порядок/заголовок чата.
+      set({
+        streaming: false,
+        streamingChatId: null,
+        currentStream: null,
+        currentSource: null,
+      });
       void get().loadChats();
     }
   },
@@ -226,6 +250,6 @@ export const useChatsStore = create<ChatsState>((set, get) => ({
   stopStreaming: () => {
     const { currentStream } = get();
     if (currentStream) currentStream.abort();
-    set({ streaming: false, streamingChatId: null, currentStream: null });
+    set({ streaming: false, streamingChatId: null, currentStream: null, currentSource: null });
   },
 }));

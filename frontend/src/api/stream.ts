@@ -14,12 +14,14 @@ export interface StreamHandle {
 export function streamMessage(
   chatId: string,
   content: string,
-  images: File[] = []
+  images: File[] = [],
+  model?: string
 ): StreamHandle {
   const controller = new AbortController();
 
   const form = new FormData();
   form.append("content", content);
+  if (model) form.append("model", model);
   for (const img of images) form.append("images", img);
 
   const iterator = async function* (): AsyncIterable<StreamEvent> {
